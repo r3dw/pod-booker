@@ -5,16 +5,16 @@ Focus: **Systems**. Stack: Vercel, Clerk, Supabase. No Railway.
 
 ---
 
-## 0. Decisions to make before writing code (today)
+## 0. Decisions (status as of Nov 10)
 
 | # | Decision | Recommendation |
 |---|----------|----------------|
-| 1 | Front-end framework | **Next.js (App Router) + TypeScript** on Vercel. First-class Clerk and Supabase support; you've used both with it. |
-| 2 | Where the app lives | **A new repo** (e.g. `r3dw/room-booking`). Leave `r3dw/proj` as the submitted proposal so its URL doesn't change. |
-| 3 | Booking rules for students | Proposed defaults: 30-min steps, max 2 h per booking, max 1 future booking at a time, up to 7 days ahead, only within open hours. **Confirm.** |
-| 4 | Open hours | Needed for the calendar range and to reject bookings. **What are they?** |
+| 1 | Front-end framework | **Decided:** Next.js 16 (App Router) + TypeScript + Tailwind, code in `src/`. Scaffolded. |
+| 2 | Where the app lives | **Decided:** this repo, `/Users/rod/projects/pod-booking` (GitHub `pod-booking`, not yet pushed). `r3dw/proj` stays as the submitted proposal. |
+| 3 | Booking rules for students | **Decided:** max 2 h per booking, only within open hours. **Still proposed, not confirmed:** 30-min steps, max 1 future booking at a time, up to 7 days ahead. |
+| 4 | Open hours | **Decided:** 8:30 AM–5:00 PM, Monday–Friday only (America/Chicago). No weekend bookings. |
 | 5 | Space names | Final names for the 2 rooms and 4 pods, and which room is staff+instructor vs staff-only. |
-| 6 | Astra export | Get one real CSV export now, so the importer is built against real columns. |
+| 6 | Astra export | **Not available yet.** Build the manual class/series form first; build the CSV importer once a real export exists. |
 
 ---
 
@@ -156,8 +156,7 @@ Built in the proposal's priority order. Nov 24 is Thanksgiving week, so plan for
 
 ## 7. Open questions (answers change the plan)
 
-1. Open hours, and are the spaces bookable on weekends?
-2. Student booking limits (length, how far ahead, how many at once)?
-3. Instructor priority: what exactly should it do?
-4. v2 notifications: email (adds Resend) or in-app only?
-5. Do you have an Astra export to build the importer against?
+1. Student booking limits beyond the 2 h max: how far ahead, how many at once?
+2. Instructor priority: what exactly should it do?
+3. v2 notifications: email (adds Resend) or in-app only?
+4. Astra CSV export: still needed for the importer.
