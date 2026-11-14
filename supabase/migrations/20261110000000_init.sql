@@ -54,8 +54,11 @@ alter table public.profiles enable row level security;
 alter table public.spaces   enable row level security;
 alter table public.bookings enable row level security;
 
--- Anonymous users get nothing, ever. Login-only app.
-revoke all on public.profiles, public.spaces, public.bookings from anon;
+-- Table privileges are granted explicitly (the project has "auto-expose new
+-- tables" off). Anonymous users get nothing, ever: login-only app.
+-- profiles/bookings get their grants with the day-2 policies and RPCs.
+revoke all on public.profiles, public.spaces, public.bookings from anon, authenticated;
+grant select on public.spaces to authenticated;
 
 create policy "signed-in users read spaces"
   on public.spaces for select to authenticated

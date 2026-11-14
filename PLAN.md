@@ -10,7 +10,7 @@ Focus: **Systems**. Stack: Vercel, Clerk, Supabase. No Railway.
 | # | Decision | Recommendation |
 |---|----------|----------------|
 | 1 | Front-end framework | **Decided:** Next.js 16 (App Router) + TypeScript + Tailwind, code in `src/`. Scaffolded. |
-| 2 | Where the app lives | **Decided:** this repo, `/Users/rod/projects/pod-booking` (GitHub `pod-booking`, not yet pushed). `r3dw/proj` stays as the submitted proposal. |
+| 2 | Where the app lives | **Decided:** this repo, `/Users/rod/projects/pod-booking` (GitHub `r3dw/pod-booking`). `r3dw/proj` stays as the submitted proposal. |
 | 3 | Booking rules for students | **Decided:** max 2 h per booking, only within open hours. **Still proposed, not confirmed:** 30-min steps, max 1 future booking at a time, up to 7 days ahead. |
 | 4 | Open hours | **Decided:** 8:30 AM–5:00 PM, Monday–Friday only (America/Chicago). No weekend bookings. |
 | 5 | Space names | Final names for the 2 rooms and 4 pods, and which room is staff+instructor vs staff-only. |
