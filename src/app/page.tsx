@@ -10,7 +10,7 @@ export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
       <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Pod Booking</h1>
+        <h1 className="text-xl font-semibold">Pod Booker</h1>
         <UserButton />
       </header>
       <Suspense fallback={<p className="text-zinc-500">Loading calendar…</p>}>
@@ -29,7 +29,7 @@ async function Calendar({ searchParams }: { searchParams: PageProps<"/">["search
   if (error || !profile) {
     return (
       <div className="max-w-lg space-y-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
-        <p className="font-medium">You can’t use Pod Booking with this account.</p>
+        <p className="font-medium">You can’t use Pod Booker with this account.</p>
         <p className="text-sm">{error?.message ?? "No profile was created."}</p>
         <SignOutButton>
           <button className={btn}>Sign out</button>

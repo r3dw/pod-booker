@@ -10,7 +10,7 @@ Focus: **Systems**. Stack: Vercel, Clerk, Supabase. No Railway.
 | # | Decision | Recommendation |
 |---|----------|----------------|
 | 1 | Front-end framework | **Decided:** Next.js 16 (App Router) + TypeScript + Tailwind, code in `src/`. Scaffolded. |
-| 2 | Where the app lives | **Decided:** this repo, `/Users/rod/projects/pod-booking` (GitHub `r3dw/pod-booking`). `r3dw/proj` stays as the submitted proposal. |
+| 2 | Where the app lives | **Decided:** this repo, `/Users/rod/projects/pod-booking` (GitHub `r3dw/pod-booker`; local folder keeps the old name). `r3dw/proj` stays as the submitted proposal. |
 | 3 | Booking rules for students | **Decided:** max 2 h per booking, only within open hours. **Still proposed, not confirmed:** 30-min steps, max 1 future booking at a time, up to 7 days ahead. |
 | 4 | Open hours | **Decided:** 8:30 AM–5:00 PM, Monday–Friday only (America/Chicago). No weekend bookings. |
 | 5 | Space names | **Decided:** Room 208 (staff + instructors), Room 213 (staff only), Pods 206, 207, 215, 216. Rooms seat ~8, pods ~5. |
@@ -136,7 +136,7 @@ Built in the proposal's priority order. Nov 24 is Thanksgiving week, so plan for
 | 2 | **Instructor priority** | Needs a definition first. Proposed: instructors can book further ahead (e.g. 21 days vs 7) and request a slot held by a student reservation; staff approve, which runs the move/cancel flow from #1. **Confirm the rule you want.** |
 | 3 | **Warnings log** | `warnings` table (user, issued_by, reason, category, date). Staff-only RLS: no policy for anyone else, so it doesn't exist to them. Staff page per user: history + "add warning". |
 | 4 | **Blocking** | `profiles.blocked_at`, `blocked_reason`. `create_booking` rejects blocked users with a clear message. Staff action to block and unblock, logged. |
-| 6 | **Room photos** *(v1 if time, else v2)* | A photo per space (column header thumbnail, larger on click). Store images in `public/spaces/`, add `spaces.photo_url`. Needs a photo of each room and pod. |
+| 6 | **Room photos** *(v1 if time, else v2)* | A photo per space (column header thumbnail, larger on click). Store images in `public/spaces/`, add `spaces.photo_url`. Needs a photo of each room and pod. Available now in `../proj/images/`: `room-1.jpg` = Room 213, `room-2.jpg` = Room 208, `pod.jpg` = Pod 216 (reuse for the other pods until each has its own). |
 | 5 | **Usage tracking** *(if time)* | SQL views: bookings per space per day, walk-ins (booked_by ≠ booked_for), peak hours, no-show data if you ever add check-in. A simple staff page with a table, not a dashboard. |
 
 **Also for the fair:** a short demo script (two browsers, live booking appearing, the student vs staff view, an attempted double-booking failing), plus the interruption tally before vs after.

@@ -8,7 +8,7 @@ import type { Kind, Profile, Space } from "@/lib/types";
 
 type Mine = { id: string; space_id: number; starts_at: string; ends_at: string; kind: Kind; status: "active" | "cancelled" };
 
-const OPEN_KEY = "pod-booking:my-bookings-open";
+const OPEN_KEY = "pod-booker:my-bookings-open";
 const PAST_DAYS = 90;
 
 /**

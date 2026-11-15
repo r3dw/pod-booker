@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Pod Booking
+# Pod Booker
 
 A live, login-only booking calendar for 6 study spaces (2 rooms, 4 pods) at the user's workplace (UChicago).
 Course project for Design, Build, Ship (MPCS 51238, Autumn 2026). Focus: **Systems**.

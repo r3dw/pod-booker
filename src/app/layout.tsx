@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pod Booking",
+  title: "Pod Booker",
   description: "Book study rooms and pods",
 };
 
