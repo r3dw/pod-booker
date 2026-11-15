@@ -8,7 +8,7 @@ Course project for Design, Build, Ship (MPCS 51238, Autumn 2026). Focus: **Syste
 - **Plan:** `PLAN.md` has the schema, RLS design, phases, the day-by-day schedule and the open questions. Read it first.
 - **Proposal page:** `../proj` (repo `r3dw/proj`, already submitted). Leave it unchanged.
 - **Stack:** Next.js 16 (App Router, TypeScript, Tailwind, `src/`), Clerk (email-code sign-in, uchicago.edu only), Supabase (Postgres, RLS, Realtime), Vercel. Free tiers only; no Railway.
-- **Deadlines:** v1 Nov 17 (works end to end), v2 Dec 1 (project fair).
+- **Deadlines:** v1 Tue Nov 17, 5:30 PM (works end to end), v2 Dec 1 (project fair).
 
 ## Rules that must hold
 - Only `@uchicago.edu` users. Enforce in the database, not just in Clerk or the UI.

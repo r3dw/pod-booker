@@ -1,6 +1,6 @@
 # Study Room Booking — Implementation Plan
 
-Two phases, matching the proposal: **Phase 1 = v1 (due Nov 17)**, **Phase 2 = v2 (fair, Dec 1)**.
+Two phases, matching the proposal: **Phase 1 = v1 (due Tue Nov 17, 5:30 PM)**, **Phase 2 = v2 (fair, Dec 1)**.
 Focus: **Systems**. Stack: Vercel, Clerk, Supabase. No Railway.
 
 ---
@@ -110,14 +110,14 @@ bookings (
 
 | Day | Work | Done when |
 |-----|------|-----------|
-| **Mon Nov 10** | New repo, Next.js app, deploy an empty shell to Vercel. Supabase project + Clerk app. Connect Clerk ↔ Supabase third-party auth. Schema migration (above). Seed 6 spaces. | A signed-in user's Clerk id shows in a Supabase query run through RLS. |
-| **Tue Nov 11** | Profile upsert with the uchicago.edu check. Role helper + RLS policies. `calendar_public` view. Broadcast trigger. **Test RLS as each role** (SQL tests, or three test accounts). | A student account can't read another student's booking, by any route. Two inserts into the same slot: one fails. |
-| **Wed Nov 12** | Day view: 6 spaces × time grid, color-coded by kind (class / recurring / reservation / walk-in / free). Data from the view or table depending on role. | Matches the mockup on the proposal page, with real data. |
-| **Thu Nov 13** | Realtime: subscribe to the broadcast and refetch the affected day. Day navigation (prev / next / today). Staff detail panel (who, booked by, when made). | Two browsers side by side: a booking in one appears in the other within ~1 s. |
-| **Fri Nov 14** | `create_booking` RPC with rules (role may book this space, within hours, length/advance limits, not in past). Booking UI: click a free slot → confirm. Cancel own booking. | A student can't book the staff-only room even by calling the RPC directly. |
-| **Sat Nov 15** | Staff tools: book on behalf (search profile by email/name → `booked_for`), quick walk-in ("this pod, now → +1 h"). Admin form for a one-off class or recurring session (expands to rows). Astra CSV import: upload → preview → insert with `series_id`; conflicts are listed, not silently dropped. Staff page to change a user's role. | A walk-in takes ≤ 3 clicks on the desk computer. A real Astra file imports. |
-| **Sun Nov 16** | Real-user testing: one student, one instructor, a desk attendant. Fix what they hit. Empty, loading and error states. Mobile layout. | Each tester completes their main task unaided. |
-| **Mon Nov 17** | Final deploy, set free-tier usage limits and alerts, short write-up. **v1 due.** | |
+| **Tue Nov 10** | New repo, Next.js app, deploy an empty shell to Vercel. Supabase project + Clerk app. Connect Clerk ↔ Supabase third-party auth. Schema migration (above). Seed 6 spaces. | A signed-in user's Clerk id shows in a Supabase query run through RLS. |
+| **Wed Nov 11** | Profile upsert with the uchicago.edu check. Role helper + RLS policies. `calendar_public` view. Broadcast trigger. **Test RLS as each role** (SQL tests, or three test accounts). | A student account can't read another student's booking, by any route. Two inserts into the same slot: one fails. |
+| **Thu Nov 12** | Day view: 6 spaces × time grid, color-coded by kind (class / recurring / reservation / walk-in / free). Data from the view or table depending on role. | Matches the mockup on the proposal page, with real data. |
+| **Fri Nov 13** | Realtime: subscribe to the broadcast and refetch the affected day. Day navigation (prev / next / today). Staff detail panel (who, booked by, when made). | Two browsers side by side: a booking in one appears in the other within ~1 s. |
+| **Sat Nov 14** | `create_booking` RPC with rules (role may book this space, within hours, length/advance limits, not in past). Booking UI: click a free slot → confirm. Cancel own booking. | A student can't book the staff-only room even by calling the RPC directly. |
+| **Sun Nov 15** | Staff tools: book on behalf (search profile by email/name → `booked_for`), quick walk-in ("this pod, now → +1 h"). Admin form for a one-off class or recurring session (expands to rows). Astra CSV import: upload → preview → insert with `series_id`; conflicts are listed, not silently dropped. Staff page to change a user's role. | A walk-in takes ≤ 3 clicks on the desk computer. A real Astra file imports. |
+| **Mon Nov 16** | Real-user testing: one student, one instructor, a desk attendant. Fix what they hit. Empty, loading and error states. Mobile layout. | Each tester completes their main task unaided. |
+| **Tue Nov 17** | Final deploy, set free-tier usage limits and alerts, short write-up. **v1 due 5:30 PM.** | |
 
 **Cut order if behind** (last to first): CSV import (fall back to the manual series form) → cancel own booking → mobile polish. **Don't cut:** RLS tests, the overlap constraint, realtime.
 
