@@ -1,11 +1,9 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Login-only app: every route except sign-in requires a session.
-const isPublic = createRouteMatcher(["/sign-in(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublic(req)) await auth.protect();
-});
+// Clerk needs its middleware to read the session on every request.
+// Access control lives in each page (auth.protect()) and, above all, in the
+// database (RLS + RPCs), not in path matching here.
+export default clerkMiddleware();
 
 export const config = {
   matcher: [

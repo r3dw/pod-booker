@@ -59,6 +59,10 @@ end $$;
 
 grant execute on all functions in schema tests to authenticated, anon;
 
+-- Start from an empty calendar so real bookings can't collide with the tests.
+-- (Inside this transaction only; rolled back at the end.)
+delete from public.bookings;
+
 insert into public.profiles (id, email, role) values
   ('t_sa',    'sa@uchicago.edu',    'student'),
   ('t_sb',    'sb@uchicago.edu',    'student'),
@@ -139,6 +143,8 @@ select tests.fails($$select public.create_booking(4::smallint, tests.at(13), tes
                    'Only staff', 'student cannot book for someone else');
 select tests.fails($$select public.set_user_role('t_sb', 'staff')$$,
                    'Only staff', 'student cannot promote themselves');
+select tests.fails($$select public.cancel_series(gen_random_uuid())$$,
+                   'Only staff', 'student cannot cancel a series');
 
 ------------------------------------------------------------------------------
 -- Privacy: student B can't see who booked, by any route
@@ -211,8 +217,15 @@ select tests.ok((select bool_and(title = 'MPCS 51238') from public.calendar_publ
                 'students see class names');
 
 select tests.login('t_staff');
-select tests.ok(public.cancel_series((select series_id from public.bookings where title = 'MPCS 51238' limit 1)) >= 2,
-                'staff cancel a series');
+select tests.ok(public.cancel_series((select series_id from public.bookings where title = 'MPCS 51238' limit 1),
+                                     (select max(starts_at) from public.bookings where title = 'MPCS 51238')) = 1,
+                'staff cancel "this and later" (last date only)');
+select tests.ok((select count(*) >= 1 from public.bookings where title = 'MPCS 51238' and status = 'active'),
+                'earlier dates of the series stay booked');
+select tests.ok(public.cancel_series((select series_id from public.bookings where title = 'MPCS 51238' limit 1)) >= 1,
+                'staff cancel the rest of a series');
+select tests.ok((select count(*) = 0 from public.bookings where title = 'MPCS 51238' and status = 'active'),
+                'no active dates left in the series');
 select public.set_user_role('t_new', 'instructor');
 select tests.ok((select role = 'instructor' from public.profiles where id = 't_new'), 'staff promote a user');
 select tests.fails($$select public.set_user_role('t_staff', 'student')$$,

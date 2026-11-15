@@ -1,63 +1,50 @@
 import { Suspense } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { SignOutButton, UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import DayView from "@/components/day-view";
 import { createServerSupabase } from "@/lib/supabase";
+import type { Profile, Space } from "@/lib/types";
+import { btn } from "@/components/ui";
 
-// Day-1 check: prove Supabase accepts the Clerk token and RLS sees the Clerk user id.
-// Replaced by the calendar on day 3.
-export default function Home() {
+export default function Home({ searchParams }: PageProps<"/">) {
   return (
-    <main className="mx-auto w-full max-w-2xl p-8 font-sans">
-      <header className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Pod Booking</h1>
+    <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+      <header className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Pod Booking</h1>
         <UserButton />
       </header>
-      <Suspense fallback={<p>Checking…</p>}>
-        <AuthCheck />
+      <Suspense fallback={<p className="text-zinc-500">Loading calendar…</p>}>
+        <Calendar searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function AuthCheck() {
-  const { userId } = await auth();
+async function Calendar({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
+  await auth.protect();
   const supabase = createServerSupabase();
 
-  const [{ data: who, error: whoError }, { data: spaces, error: spacesError }] =
-    await Promise.all([
-      supabase.rpc("whoami"),
-      supabase.from("spaces").select("id, name, kind, capacity, bookable_by").order("id"),
-    ]);
+  // Creates the profile on first sign-in; the database rejects non-uchicago emails.
+  const { data: profile, error } = await supabase.rpc("ensure_profile");
+  if (error || !profile) {
+    return (
+      <div className="max-w-lg space-y-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
+        <p className="font-medium">You can’t use Pod Booking with this account.</p>
+        <p className="text-sm">{error?.message ?? "No profile was created."}</p>
+        <SignOutButton>
+          <button className={btn}>Sign out</button>
+        </SignOutButton>
+      </div>
+    );
+  }
 
-  const match = who?.sub === userId;
+  const { data: spaces } = await supabase
+    .from("spaces")
+    .select("id, name, kind, capacity, bookable_by")
+    .eq("active", true)
+    .order("id");
 
-  return (
-    <>
-      <section className="mb-8 space-y-1">
-        <h2 className="font-medium">Auth check</h2>
-        <p>Clerk user id: <code>{userId}</code></p>
-        <p>Supabase sees: <code>{who?.sub ?? "(nothing)"}</code> as role <code>{who?.role ?? "?"}</code></p>
-        <p className={match ? "text-green-700" : "text-red-700"}>
-          {match ? "✓ Match — RLS sees the Clerk user." : `✗ No match${whoError ? `: ${whoError.message}` : ""}`}
-        </p>
-      </section>
-
-      <section>
-        <h2 className="mb-2 font-medium">Spaces (read through RLS)</h2>
-        {spacesError ? (
-          <p className="text-red-700">{spacesError.message}</p>
-        ) : spaces?.length ? (
-          <ul className="list-disc pl-6">
-            {spaces.map((s) => (
-              <li key={s.id}>
-                {s.name} — {s.kind}, capacity {s.capacity}, bookable by {s.bookable_by.join(", ")}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-red-700">No rows — token not accepted, or not seeded.</p>
-        )}
-      </section>
-    </>
-  );
+  const { day } = await searchParams;
+  const initialDay = typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : undefined;
+  return <DayView profile={profile as Profile} spaces={(spaces ?? []) as Space[]} initialDay={initialDay} />;
 }
