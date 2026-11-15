@@ -13,7 +13,7 @@ const PAST_DAYS = 90;
 
 /**
  * The signed-in user's own bookings. Collapsed: one line with the next booking.
- * Expanded: Upcoming (with View/Cancel) and Past (last 90 days, read-only).
+ * Expanded: Upcoming (with View/Cancel) and Past & cancelled (last 90 days, read-only).
  */
 export function MyBookings({
   profile,
@@ -66,8 +66,10 @@ export function MyBookings({
 
   const loadPast = useCallback(async () => {
     const since = new Date(Date.now() - PAST_DAYS * 86_400_000).toISOString();
+    const now = new Date().toISOString();
+    // Ended bookings, plus cancelled ones (including cancelled future dates).
     const { data, error } = await base()
-      .lte("ends_at", new Date().toISOString())
+      .or(`ends_at.lte."${now}",status.eq.cancelled`)
       .gte("starts_at", since)
       .order("starts_at", { ascending: false })
       .limit(100);
@@ -151,7 +153,7 @@ export function MyBookings({
                   tab === t ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
-                {t === "upcoming" ? `Upcoming (${upcoming.length})` : `Past ${PAST_DAYS} days`}
+                {t === "upcoming" ? `Upcoming (${upcoming.length})` : "Past & cancelled"}
               </button>
             ))}
           </div>
@@ -188,7 +190,7 @@ export function MyBookings({
           ) : past === null ? (
             <p className="py-1 text-sm text-zinc-500">Loading…</p>
           ) : past.length === 0 ? (
-            <p className="py-1 text-sm text-zinc-500">No bookings in the last {PAST_DAYS} days.</p>
+            <p className="py-1 text-sm text-zinc-500">No past or cancelled bookings in the last {PAST_DAYS} days.</p>
           ) : (
             <ul className="max-h-72 divide-y divide-zinc-100 overflow-y-auto dark:divide-zinc-800/70">
               {past.map((b) => (

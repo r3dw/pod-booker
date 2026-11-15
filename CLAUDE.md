@@ -13,7 +13,7 @@ Course project for Design, Build, Ship (MPCS 51238, Autumn 2026). Focus: **Syste
 ## Rules that must hold
 - Only `@uchicago.edu` users. Enforce in the database, not just in Clerk or the UI.
 - Roles (`student | instructor | staff`) live in `profiles`. Everyone starts as `student`; only staff can promote.
-- Students see class/session names and booked/free only, never who booked. Live updates must not leak names (see PLAN.md, "The privacy + realtime problem").
+- Students **and instructors** see class/session names and booked/free only, never who booked. Only staff see names. (Decided Nov 15; the submitted proposal said instructors would see names.) Live updates must not leak names (see PLAN.md, "The privacy + realtime problem").
 - Double-booking is prevented by a Postgres exclusion constraint.
 - Open hours: 8:30 AM–5:00 PM, Monday–Friday, America/Chicago. Students: max 2 h per booking.
 
