@@ -14,8 +14,10 @@ Focus: **Systems**. Stack: Vercel, Clerk, Supabase. No Railway.
 | 3 | Booking rules for students | **Decided:** max 2 h per booking, only within open hours. **Still proposed, not confirmed:** 30-min steps, max 1 future booking at a time, up to 7 days ahead. |
 | 4 | Open hours | **Decided:** 8:30 AM–5:00 PM, Monday–Friday only (America/Chicago). No weekend bookings. |
 | 5 | Space names | **Decided:** Room 208 (staff + instructors), Room 213 (staff only), Pods 206, 207, 215, 216. Rooms seat ~8, pods ~5. |
+| 6 | Astra export | **Built (Nov 16):** Staff tools → Import from Registrar reads the .xlsx/.csv export in the browser. Course/Section → course, section, type (LEC, SEM, DIS, LAB, SCR, TUT, STU); R = Thursday; times rounded out to the quarter hour; duplicate rows merged; past meetings and closed days skipped; conflicts listed per class. |
 | 7 | Who sees names | **Decided (Nov 15):** only staff. Instructors see the same calendar as students (class names, booked/free). Changed from the proposal, which said instructors see names. |
-| 6 | Astra export | **Not available yet.** Build the manual class/series form first; build the CSV importer once a real export exists. |
+| 8 | Closed and special days | **Decided (Nov 16):** `calendar_days` table. *Closed* (nobody books, imports skip): University holidays, Thanksgiving week, from the end of finals to the start of the next quarter. *Staff only*: finals week (classes and staff bookings only). *Note*: reading days (banner, normal bookings). Seeded for 2026–27; summer left open. Winter/Spring follow the Autumn pattern (to confirm). |
+| 9 | Booking steps | **Decided (Nov 16):** staff and imported classes use quarter hours (15 min); students and instructors keep half hours. |
 
 ---
 

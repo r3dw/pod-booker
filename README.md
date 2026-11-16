@@ -27,12 +27,15 @@ Pod Booker puts one live calendar in front of everyone.
 | Cancel own upcoming bookings; "My bookings" list and history | ✓ | ✓ | ✓ |
 | Book for someone else, quick walk-ins | | | ✓ |
 | Add classes and recurring sessions (expanded to dated bookings) | | | ✓ |
+| Import classes from a Registrar export (.xlsx/.csv) | | | ✓ |
 | Cancel any booking, one date or "this and later" of a series | | | ✓ |
 | Change people's roles | | | ✓ |
 
 **Booking rules** (enforced in the database): Monday–Friday, 8:30 AM–5:00 PM, America/Chicago;
-half-hour steps; nothing in the past. Students and instructors can book up to 7 days ahead.
-Students: at most 2 hours per booking and one upcoming booking at a time.
+nothing in the past. Students and instructors book in half-hour steps, up to 7 days ahead; staff
+and imported classes can use quarter hours. Students: at most 2 hours per booking and one upcoming
+booking at a time. The spaces are closed on University holidays, Thanksgiving week and between
+quarters; during finals week only staff and classes can book; reading days show a banner.
 
 ## Architecture
 
@@ -88,15 +91,18 @@ falls back to refreshing every 15 s while the live connection is down.
 - `spaces(id, name, kind room|pod, capacity, bookable_by role[])`
 - `bookings(space_id, starts_at, ends_at, during tstzrange, kind class|recurring|reservation|walkin,
   title, booked_for, booked_by, series_id, status active|cancelled)`
+- `calendar_days(day, kind closed|staff_only|note, label)`: holidays, breaks, finals week and
+  reading days, seeded from the 2026–27 academic calendar
 
 Recurring classes/sessions are expanded into one row per date sharing a `series_id`, so the overlap
 constraint keeps working and a series can be cancelled by id.
 
 ## Tests
 
-`supabase/tests/01_rls_and_rules.sql`: about 60 SQL assertions run as anonymous, each role, and a
+`supabase/tests/01_rls_and_rules.sql`: about 75 SQL assertions run as anonymous, each role, and a
 user with no profile: the uchicago.edu check, RLS on every table, the privacy of `calendar_public`,
-every booking rule, the overlap constraint, series conflicts, role changes, and that broadcast
+every booking rule, the overlap constraint, series conflicts, closed and finals-week days,
+quarter-hour rules, the Registrar import, role changes, and that broadcast
 payloads contain no names. It runs inside a transaction that is rolled back, so it never changes
 real data.
 
@@ -138,9 +144,12 @@ PLAN.md               full plan, decisions, schedule, v2 roadmap
 
 - **Instructors see the same calendar as students** (class names, booked/free). Only staff see names.
   Instructors who need to know who booked a space can ask staff.
-- **Astra CSV import is not in v1:** no export is available yet. Staff enter classes and recurring
-  sessions with the series form instead.
-- **Additions:** "My bookings" (upcoming, past and cancelled), cancel "this and later dates" for series.
+- **Registrar import is built:** Staff tools → Import from Registrar reads the export in the browser,
+  rounds class times out to the quarter hour, merges duplicate rows, skips past meetings and closed
+  days, and lists any conflicts.
+- **Additions:** "My bookings" (upcoming, past and cancelled), cancel "this and later dates" for series;
+  closed, finals-week and reading days from the academic calendar; students and instructors see only
+  the spaces they can book.
 
 ## Known limitations
 
