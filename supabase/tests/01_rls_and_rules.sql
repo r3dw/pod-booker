@@ -33,6 +33,14 @@ language sql stable as $$
   select (coalesce(d, tests.day()) + make_time(h, m, 0)) at time zone 'America/Chicago'
 $$;
 
+-- The n-th weekday after today (Chicago), n = 1 is the same as tests.day().
+create function tests.nth_day(n int) returns date language sql stable as $$
+  select d::date from generate_series(
+           (now() at time zone 'America/Chicago')::date + 1,
+           (now() at time zone 'America/Chicago')::date + 14, interval '1 day') d
+  where extract(isodow from d) between 1 and 5 order by d offset n - 1 limit 1
+$$;
+
 -- Act as a signed-in Clerk user (what the Supabase Clerk integration does per request).
 create function tests.login(sub text, email text default null) returns void language sql as $$
   select set_config('request.jwt.claims',
@@ -62,6 +70,7 @@ grant execute on all functions in schema tests to authenticated, anon;
 -- Start from an empty calendar so real bookings can't collide with the tests.
 -- (Inside this transaction only; rolled back at the end.)
 delete from public.bookings;
+delete from public.calendar_days;
 
 insert into public.profiles (id, email, role) values
   ('t_sa',    'sa@uchicago.edu',    'student'),
@@ -243,6 +252,60 @@ begin
     raise notice 'skip - walk-in test (outside open hours)';
   end if;
 end $$;
+
+------------------------------------------------------------------------------
+-- Quarter hours, closed days, staff-only days, imports
+------------------------------------------------------------------------------
+
+reset role;
+insert into public.calendar_days (day, kind, label) values
+  (tests.nth_day(2), 'closed',     'Test holiday'),
+  (tests.nth_day(3), 'staff_only', 'Finals week'),
+  (tests.nth_day(4), 'note',       'Reading day');
+set local role authenticated;
+
+select tests.login('t_staff');
+select tests.ok(public.create_booking(5::smallint, tests.at(9, 15), tests.at(9, 45)) is not null,
+                'staff can book on the quarter hour');
+select tests.fails($$select public.create_booking(5::smallint, tests.at(10, 10), tests.at(10, 40))$$,
+                   'quarter hour', 'staff bookings still on a 15-minute grid');
+select tests.fails($$select public.create_booking(5::smallint, tests.at(10, 0, tests.nth_day(2)), tests.at(11, 0, tests.nth_day(2)))$$,
+                   'Closed: Test holiday', 'nobody books on a closed day, not even staff');
+select tests.ok(public.create_booking(5::smallint, tests.at(10, 0, tests.nth_day(3)), tests.at(11, 0, tests.nth_day(3))) is not null,
+                'staff can book on a staff-only day');
+
+select tests.login('t_new');  -- promoted to instructor above
+select tests.fails($$select public.create_booking(6::smallint, tests.at(10, 0, tests.nth_day(3)), tests.at(11, 0, tests.nth_day(3)))$$,
+                   'Finals week: no reservations', 'instructor cannot book on a staff-only day');
+select tests.login('t_sb');
+select tests.fails($$select public.create_booking(6::smallint, tests.at(15, 15), tests.at(15, 45))$$,
+                   'half hour', 'students stay on the half-hour grid');
+select tests.fails($$select public.create_booking(6::smallint, tests.at(10, 0, tests.nth_day(2)), tests.at(11, 0, tests.nth_day(2)))$$,
+                   'Closed: Test holiday', 'student cannot book on a closed day');
+select tests.login('t_new');
+select tests.ok(public.create_booking(4::smallint, tests.at(16, 0, tests.nth_day(4)), tests.at(16, 30, tests.nth_day(4))) is not null,
+                'a note day (reading day) is open for normal bookings');
+
+-- Import-style series: starts in the past, crosses the closed day.
+select tests.login('t_staff');
+select tests.ok((select (r ->> 'past')::int >= 1
+                        and r -> 'closed' = to_jsonb(array[tests.nth_day(2)])
+                        and (r ->> 'created')::int >= 2
+                 from public.create_series(6::smallint, 'class', 'IMPORT 101 (Sec. 1, Lecture)',
+                                           tests.past_day(), tests.nth_day(4), '{1,2,3,4,5}',
+                                           '12:15', '13:15', true, true) r),
+                'import skips past meetings and closed days, books the rest (quarter-hour times)');
+select tests.ok(not exists (select 1 from public.bookings where title like 'IMPORT 101%'
+                            and (starts_at at time zone 'America/Chicago')::date = tests.nth_day(2)),
+                'nothing booked on the closed day');
+select tests.fails(format($$select public.create_series(5::smallint, 'class', 'Past test', %L, %L, '{1,2,3,4,5}', '15:15', '16:15')$$,
+                          tests.past_day(), tests.nth_day(1)),
+                   'already passed', 'without skip_past, the manual form still refuses past dates');
+
+select tests.login('t_sb');
+select tests.ok((select count(*) = 3 from public.calendar_days), 'profiled users can read calendar days');
+select tests.login('t_ghost');
+select tests.ok((select count(*) = 0 from public.calendar_days), 'user without profile cannot read calendar days');
 
 ------------------------------------------------------------------------------
 -- Realtime payload carries no names; raw constraint holds even for the owner

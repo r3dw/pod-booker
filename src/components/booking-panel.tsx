@@ -88,8 +88,13 @@ function ErrorText({ error }: { error: string | null }) {
 // ---------------------------------------------------------------------------
 
 function NewBooking({ selection, profile, slots, supabase, onClose, onChanged }: Props & { selection: Extract<Selection, { type: "new" }> }) {
-  const { space, day, startMin } = selection;
+  const { space, day } = selection;
   const isStaff = profile.role === "staff";
+  // Staff book in quarter hours; students and instructors in half hours.
+  const step = isStaff ? 15 : STEP;
+  // Staff can start at the slot they clicked or a quarter past it.
+  const startOptions = isStaff ? [selection.startMin, selection.startMin + 15] : [selection.startMin];
+  const [startMin, setStartMin] = useState(selection.startMin);
 
   // Longest possible: to the next booking in this space, closing time, or 2 h for students.
   const nextStart = slots
@@ -99,9 +104,11 @@ function NewBooking({ selection, profile, slots, supabase, onClose, onChanged }:
     .reduce((a, b) => Math.min(a, b), CLOSE);
   const cap = profile.role === "student" ? Math.min(nextStart, startMin + 120) : nextStart;
   const durations: number[] = [];
-  for (let m = STEP; startMin + m <= cap; m += STEP) durations.push(m);
+  for (let m = step; startMin + m <= cap; m += step) durations.push(m);
 
-  const [duration, setDuration] = useState(Math.min(60, durations.at(-1) ?? STEP));
+  const [wanted, setDuration] = useState(60);
+  // Keep the chosen length valid when the start time changes.
+  const duration = durations.includes(wanted) ? wanted : (durations.filter((m) => m <= wanted).at(-1) ?? durations[0] ?? step);
   const [kind, setKind] = useState<Kind>("reservation");
   const [title, setTitle] = useState("");
   const [person, setPerson] = useState<Person | null>(null);
@@ -128,6 +135,18 @@ function NewBooking({ selection, profile, slots, supabase, onClose, onChanged }:
     <>
       <PanelHeader title={`Book ${space.name}`} subtitle={formatDay(day)} onClose={onClose} />
       <div className="space-y-3">
+        {startOptions.length > 1 && (
+          <label className="block">
+            <span className={label}>Starts</span>
+            <select className={field} value={startMin} onChange={(e) => setStartMin(Number(e.target.value))}>
+              {startOptions.map((m) => (
+                <option key={m} value={m}>
+                  {formatClock(m)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="block">
           <span className={label}>Time</span>
           <select className={field} value={duration} onChange={(e) => setDuration(Number(e.target.value))}>

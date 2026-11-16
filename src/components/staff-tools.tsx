@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { btn, btnPrimary, field, label } from "@/components/ui";
+import { ImportTab } from "@/components/import-tab";
 import { useSupabase } from "@/lib/supabase-browser";
 import {
   CLOSE,
   OPEN,
-  STEP,
   addDays,
   dayOf,
   firstOpenDay,
@@ -25,6 +25,7 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const TABS = [
   { id: "add", label: "Add class or session" },
   { id: "classes", label: "Classes & sessions" },
+  { id: "import", label: "Import from Registrar" },
   { id: "people", label: "People and roles" },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
@@ -60,6 +61,7 @@ export default function StaffTools({ me, spaces, initialTab }: { me: Profile; sp
       <div role="tabpanel">
         {tab === "add" && <SeriesForm spaces={spaces} />}
         {tab === "classes" && <SeriesList spaces={spaces} />}
+        {tab === "import" && <ImportTab spaces={spaces} />}
         {tab === "people" && <People me={me} />}
       </div>
     </div>
@@ -69,8 +71,9 @@ export default function StaffTools({ me, spaces, initialTab }: { me: Profile; sp
 // ---------------------------------------------------------------------------
 // Add a class or recurring session (expands to one booking per date)
 
+// Staff can use quarter hours.
 const timeOptions: number[] = [];
-for (let m = OPEN; m <= CLOSE; m += STEP) timeOptions.push(m);
+for (let m = OPEN; m <= CLOSE; m += 15) timeOptions.push(m);
 const toTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
 function defaults(spaces: Space[]) {

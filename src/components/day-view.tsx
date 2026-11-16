@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -40,6 +41,8 @@ export const KIND_STYLE: Record<Slot["kind"], { label: string; block: string; do
   walkin: { label: "Walk-in", block: "bg-amber-100 border-amber-400 text-amber-950 dark:bg-amber-950 dark:border-amber-500 dark:text-amber-100", dot: "bg-amber-400" },
 };
 
+type SpecialDay = { kind: "closed" | "staff_only" | "note"; label: string };
+
 type StaffRow = Omit<Slot, "is_mine" | "booked_for" | "booked_by"> & {
   booked_for: string | null;
   for_profile: { email: string; display_name: string | null } | null;
@@ -58,6 +61,8 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
   const [selection, setSelection] = useState<Selection | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [refreshKey, setRefreshKey] = useState(0);
+  // Closed and staff-only days (holidays, breaks, finals week), keyed by "YYYY-MM-DD".
+  const [specialDays, setSpecialDays] = useState<Map<string, SpecialDay>>(new Map());
 
   // Re-render every 30 s so past slots and the "now" line stay current.
   useEffect(() => {
@@ -103,6 +108,16 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
     },
     [supabase, isStaff, profile.id],
   );
+
+  useEffect(() => {
+    if (!ready) return;
+    supabase
+      .from("calendar_days")
+      .select("day, kind, label")
+      .then(({ data }) => {
+        if (data) setSpecialDays(new Map((data as ({ day: string } & SpecialDay)[]).map((d) => [d.day, { kind: d.kind, label: d.label }])));
+      });
+  }, [ready, supabase]);
 
   // Fetch whenever the day changes.
   useEffect(() => {
@@ -195,19 +210,31 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
     return () => clearInterval(t);
   }, [ready, live]);
 
-  // Spaces this person can book come first (on a phone only ~3 columns fit, and
-  // students shouldn't land on two rooms they can't use). Stable sort keeps id order.
-  const columns = [...spaces].sort(
-    (a, b) => Number(b.bookable_by.includes(profile.role)) - Number(a.bookable_by.includes(profile.role)),
-  );
+  // Show only the spaces this person can book: students see the 4 pods,
+  // instructors the pods + Room 208, staff everything. (Display only; the
+  // database enforces who may book what.)
+  const columns = spaces.filter((s) => s.bookable_by.includes(profile.role));
 
   const today = todayChicago();
   const nowMin = day === today ? minutesOf(new Date(now)) : null;
   const advanceLimit = now + 7 * 24 * 60 * 60 * 1000;
   const loading = loadedDay !== day;
 
+  const special = specialDays.get(day);
+  const closedLabel = !isOpenDay(day) ? null : special?.kind === "closed" ? special.label : null;
+  const staffOnly = special?.kind === "staff_only" ? special.label : null;
+  const note = special?.kind === "note" ? special.label : null;
+  const isClosed = !isOpenDay(day) || closedLabel !== null;
+  /** Next weekday that isn't a closed day. */
+  const nextOpenDay = (from: string) => {
+    let d = firstOpenDay(from);
+    for (let i = 0; i < 60 && specialDays.get(d)?.kind === "closed"; i++) d = stepOpenDay(d, 1);
+    return d;
+  };
+
   function slotState(space: Space, startMin: number): "open" | "past" | "locked" | "far" {
     if (!space.bookable_by.includes(profile.role)) return "locked";
+    if (staffOnly && !isStaff) return "past";
     const end = chicagoTime(day, startMin + STEP).getTime();
     if (end <= now) return "past";
     if (!isStaff && chicagoTime(day, startMin).getTime() > advanceLimit) return "far";
@@ -285,19 +312,42 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
         </p>
       )}
 
-      {!isOpenDay(day) ? (
+      {note && !isClosed && (
+        <p className="rounded-md border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100">
+          <span className="font-medium">{note}:</span> the pods are open for study. Book as usual.
+        </p>
+      )}
+
+      {staffOnly && !isClosed && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
+          <span className="font-medium">{staffOnly}:</span>{" "}
+          {isStaff ? "students and instructors can’t book today; staff and classes can." : "no reservations today."}
+        </p>
+      )}
+
+      {isClosed ? (
         <div className="rounded-lg border border-zinc-200 p-6 text-center dark:border-zinc-800">
-          <p className="font-medium">{day === today ? "Closed today" : "Closed this day"}</p>
-          <p className="mt-1 text-sm text-zinc-500">Open Monday–Friday, 8:30 AM–5:00 PM.</p>
-          <button className={`${btn} mt-4`} onClick={() => setDay(firstOpenDay(day))}>
-            Go to {formatDay(firstOpenDay(day))}
+          <p className="font-medium">
+            {day === today ? "Closed today" : "Closed this day"}
+            {closedLabel && `: ${closedLabel}`}
+          </p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {closedLabel ? "No bookings on this day." : "Open Monday–Friday, 8:30 AM–5:00 PM."}
+          </p>
+          <button className={`${btn} mt-4`} onClick={() => setDay(nextOpenDay(day))}>
+            Go to {formatDay(nextOpenDay(day))}
           </button>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
           <div
-            className={`grid min-w-[600px] transition-opacity sm:min-w-[720px] ${loading ? "opacity-60" : ""}`}
-            style={{ gridTemplateColumns: `4.5rem repeat(${spaces.length}, minmax(0, 1fr))` }}
+            className={`grid min-w-[calc(4rem+var(--cols)*4.5rem)] transition-opacity sm:min-w-[720px] ${loading ? "opacity-60" : ""}`}
+            style={
+              {
+                gridTemplateColumns: `4rem repeat(${columns.length}, minmax(0, 1fr))`,
+                "--cols": columns.length, // phones: ~72px per column, so 4 pods fit without scrolling
+              } as React.CSSProperties
+            }
           >
             {/* Header row */}
             <div className="sticky left-0 z-20 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" />
