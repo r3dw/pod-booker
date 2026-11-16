@@ -14,6 +14,7 @@ export type Space = {
   kind: "room" | "pod";
   capacity: number;
   bookable_by: Role[];
+  photo_url?: string | null;
 };
 
 export type Person = { id?: string; email: string; display_name: string | null };

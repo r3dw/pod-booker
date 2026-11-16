@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -23,7 +24,9 @@ import {
 } from "@/lib/time";
 import type { Profile, Slot, Space } from "@/lib/types";
 import { BookingPanel, type Selection } from "./booking-panel";
+import { AppHeader } from "./app-header";
 import { MyBookings } from "./my-bookings";
+import { SpacePhotoDialog, bookableText } from "./space-photo";
 import { btn } from "@/components/ui";
 
 const SLOT_H = 36; // px per 30 minutes
@@ -57,8 +60,10 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loadedDay, setLoadedDay] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [live, setLive] = useState(false);
+  const [conn, setConn] = useState<"connecting" | "live" | "retrying">("connecting");
+  const live = conn === "live";
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [photoSpace, setPhotoSpace] = useState<Space | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [refreshKey, setRefreshKey] = useState(0);
   // Closed and staff-only days (holidays, breaks, finals week), keyed by "YYYY-MM-DD".
@@ -166,12 +171,12 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
         if (disposed || channel !== current) return; // a channel we already dropped
         if (status === "SUBSCRIBED") {
           attempt = 0;
-          setLive(true);
+          setConn("live");
           loadRef.current(dayRef.current); // catch up on anything missed
           return;
         }
         console.warn(`[realtime] ${status}${err ? `: ${err.message}` : ""}`);
-        setLive(false);
+        setConn("retrying");
         // supabase-js won't rejoin a channel the server closed, so start a new one.
         current = null;
         supabase.removeChannel(channel);
@@ -243,8 +248,29 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <AppHeader>
+        <span
+          className={`font-medium ${live ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}
+          title={
+            live
+              ? "Changes appear instantly"
+              : conn === "connecting"
+                ? "Connecting to live updates…"
+                : "Live connection unavailable; refreshing every 15 seconds"
+          }
+        >
+          {live ? "Live" : conn === "connecting" ? "Connecting" : "Auto-refresh"}
+        </span>
+        <span className="hidden capitalize text-zinc-500 sm:inline">{profile.role}</span>
+        {isStaff && (
+          <Link href="/staff" className={btn}>
+            Staff tools
+          </Link>
+        )}
+      </AppHeader>
+
+      {/* Day navigation */}
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-1">
           <button className={btn} onClick={() => setDay((d) => stepOpenDay(d, -1))} aria-label="Previous day">
             ←
@@ -261,39 +287,6 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
           <span className="sm:hidden">{formatShortDay(day)}</span>
           {day === today && <span className="ml-2 text-sm font-normal text-zinc-500">today</span>}
         </h2>
-        <div className="ml-auto flex items-center gap-3 text-sm text-zinc-500">
-          <span
-            className="flex items-center gap-1.5"
-            title={live ? "Changes appear instantly" : "Live connection unavailable; refreshing every 15 seconds"}
-          >
-            <span className={`h-2 w-2 rounded-full ${live ? "bg-emerald-500" : "bg-amber-500"}`} />
-            {live ? "Live" : "Auto-refresh"}
-          </span>
-          <span className="capitalize">{profile.role}</span>
-          {isStaff && (
-            <Link href="/staff" className={btn}>
-              Staff tools
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-        {Object.entries(KIND_STYLE).map(([k, s]) => (
-          <span key={k} className="flex items-center gap-1.5">
-            <span className={`h-2.5 w-2.5 rounded-sm ${s.dot}`} />
-            {s.label}
-          </span>
-        ))}
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm ring-2 ring-emerald-500" />
-          Yours
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900" />
-          Free
-        </span>
       </div>
 
       <MyBookings
@@ -352,19 +345,46 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
             {/* Header row */}
             <div className="sticky left-0 z-20 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" />
             {columns.map((s) => {
-              const canBook = s.bookable_by.includes(profile.role);
               return (
                 <div
                   key={s.id}
-                  className="border-b border-l border-zinc-200 bg-zinc-50 px-2 py-2 dark:border-zinc-800 dark:bg-zinc-900"
+                  className="flex flex-col border-b border-l border-zinc-200 bg-zinc-50 px-2 py-2 dark:border-zinc-800 dark:bg-zinc-900"
                 >
-                  <div className="text-sm font-medium">{s.name}</div>
-                  <div className="text-xs text-zinc-500">
-                    {canBook ? `${s.kind === "room" ? "Room" : "Pod"} · ${s.capacity}` : bookableLabel(s)}
+                  {s.photo_url && (
+                    <button
+                      onClick={() => setPhotoSpace(s)}
+                      className="mb-1.5 hidden w-full overflow-hidden rounded sm:block"
+                      aria-label={`Photo of ${s.name}`}
+                    >
+                      <Image src={s.photo_url} alt="" width={240} height={135} className="h-16 w-full object-cover transition-transform hover:scale-105" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setPhotoSpace(s)}
+                    className="whitespace-nowrap text-left text-sm font-medium decoration-dotted underline-offset-2 hover:underline"
+                    title="Show photo"
+                  >
+                    {s.name}
+                  </button>
+                  <div className="flex items-center gap-1 text-xs text-zinc-500">
+                    {s.kind === "room" ? "Room" : "Pod"} · {s.capacity}
+                    {s.photo_url && (
+                      // Phones hide the thumbnail; the camera shows that the name opens a photo.
+                      <button onClick={() => setPhotoSpace(s)} aria-label={`Photo of ${s.name}`} className="sm:hidden">
+                        <svg aria-hidden viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-zinc-400">
+                          <path d="M6.5 4.5 7.6 3h4.8l1.1 1.5H16A2 2 0 0 1 18 6.5v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.5ZM10 14a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0-1.6a1.9 1.9 0 1 1 0-3.8 1.9 1.9 0 0 1 0 3.8Z" />
+                        </svg>
+                      </button>
+                    )}
+
                   </div>
+                  {isStaff && !s.bookable_by.includes("student") && (
+                    <div className="hidden text-xs text-zinc-500 sm:block">{bookableText(s)}</div>
+                  )}
                   {isStaff && day === today && (
                     <button
-                      className="mt-1 text-xs font-medium text-amber-700 hover:underline dark:text-amber-400"
+                      // mt-auto pins it to the bottom of the header cell so all columns line up.
+                      className="mt-auto self-start pt-1 text-xs font-medium text-amber-700 hover:underline dark:text-amber-400"
                       onClick={() => setSelection({ type: "walkin", space: s })}
                     >
                       + Walk-in now
@@ -452,14 +472,30 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
         </div>
       )}
 
-      {!isStaff && (
-        <p className="text-xs text-zinc-500">
-          {profile.role === "student"
+      {/* Legend: below the calendar so the top of the page stays for the date and the grid */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+        {Object.entries(KIND_STYLE).map(([k, st]) => (
+          <span key={k} className="flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-sm ${st.dot}`} />
+            {st.label}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm ring-2 ring-emerald-500" />
+          Yours
+        </span>
+      </div>
+
+      <p className="text-xs text-zinc-500">
+        {isStaff
+          ? "Staff can book any space in quarter hours, for themselves or others."
+          : profile.role === "student"
             ? "Students can book up to 2 hours, one upcoming booking at a time, up to 7 days ahead."
             : "Instructors can book up to 7 days ahead."}{" "}
-          Open Monday–Friday, 8:30 AM–5:00 PM.
-        </p>
-      )}
+        Open Monday–Friday, 8:30 AM–5:00 PM.
+      </p>
+
+      {photoSpace && <SpacePhotoDialog space={photoSpace} onClose={() => setPhotoSpace(null)} />}
 
       {selection && (
         <BookingPanel
@@ -479,11 +515,6 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
   );
 }
 
-function bookableLabel(s: Space) {
-  if (s.bookable_by.length === 1 && s.bookable_by[0] === "staff") return "Staff only";
-  if (!s.bookable_by.includes("student")) return "Instructors & staff";
-  return "";
-}
 
 function selectionKey(s: Selection) {
   if (s.type === "existing") return `e-${s.slot.id}`;

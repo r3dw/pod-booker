@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { SignOutButton, UserButton } from "@clerk/nextjs";
+import { SignOutButton } from "@clerk/nextjs";
+import { AppHeader } from "@/components/app-header";
 import { auth } from "@clerk/nextjs/server";
 import DayView from "@/components/day-view";
 import { createServerSupabase } from "@/lib/supabase";
@@ -9,11 +10,14 @@ import { btn } from "@/components/ui";
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Pod Booker</h1>
-        <UserButton />
-      </header>
-      <Suspense fallback={<p className="text-zinc-500">Loading calendar…</p>}>
+      <Suspense
+        fallback={
+          <>
+            <AppHeader />
+            <p className="text-zinc-500">Loading calendar…</p>
+          </>
+        }
+      >
         <Calendar searchParams={searchParams} />
       </Suspense>
     </main>
@@ -28,6 +32,8 @@ async function Calendar({ searchParams }: { searchParams: PageProps<"/">["search
   const { data: profile, error } = await supabase.rpc("ensure_profile");
   if (error || !profile) {
     return (
+      <>
+      <AppHeader />
       <div className="max-w-lg space-y-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">
         <p className="font-medium">You can’t use Pod Booker with this account.</p>
         <p className="text-sm">{error?.message ?? "No profile was created."}</p>
@@ -35,12 +41,13 @@ async function Calendar({ searchParams }: { searchParams: PageProps<"/">["search
           <button className={btn}>Sign out</button>
         </SignOutButton>
       </div>
+      </>
     );
   }
 
   const { data: spaces } = await supabase
     .from("spaces")
-    .select("id, name, kind, capacity, bookable_by")
+    .select("id, name, kind, capacity, bookable_by, photo_url")
     .eq("active", true)
     .order("id");
 
