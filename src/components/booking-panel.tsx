@@ -51,7 +51,7 @@ export function BookingPanel(props: Props) {
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-t-xl bg-white p-5 shadow-xl sm:rounded-xl dark:bg-zinc-900"
+        className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-5 shadow-xl sm:rounded-xl dark:bg-zinc-900"
         onClick={(e) => e.stopPropagation()}
       >
         {selection.type === "new" && <NewBooking {...props} selection={selection} />}

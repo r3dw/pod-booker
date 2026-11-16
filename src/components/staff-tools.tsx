@@ -345,7 +345,7 @@ function SeriesList({ spaces }: { spaces: Space[] }) {
 type PersonRow = { id: string; email: string; display_name: string | null; role: Role };
 
 const roleSelect =
-  "w-36 shrink-0 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950";
+  "w-36 shrink-0 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-base sm:text-sm disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950";
 
 function People({ me }: { me: Profile }) {
   const { supabase, ready } = useSupabase();

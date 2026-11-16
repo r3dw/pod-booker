@@ -14,6 +14,7 @@ import {
   firstOpenDay,
   formatClock,
   formatDay,
+  formatShortDay,
   isOpenDay,
   minutesOf,
   stepOpenDay,
@@ -194,6 +195,12 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
     return () => clearInterval(t);
   }, [ready, live]);
 
+  // Spaces this person can book come first (on a phone only ~3 columns fit, and
+  // students shouldn't land on two rooms they can't use). Stable sort keeps id order.
+  const columns = [...spaces].sort(
+    (a, b) => Number(b.bookable_by.includes(profile.role)) - Number(a.bookable_by.includes(profile.role)),
+  );
+
   const today = todayChicago();
   const nowMin = day === today ? minutesOf(new Date(now)) : null;
   const advanceLimit = now + 7 * 24 * 60 * 60 * 1000;
@@ -223,7 +230,8 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
           </button>
         </div>
         <h2 className="text-lg font-medium">
-          {formatDay(day)}
+          <span className="hidden sm:inline">{formatDay(day)}</span>
+          <span className="sm:hidden">{formatShortDay(day)}</span>
           {day === today && <span className="ml-2 text-sm font-normal text-zinc-500">today</span>}
         </h2>
         <div className="ml-auto flex items-center gap-3 text-sm text-zinc-500">
@@ -288,12 +296,12 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
       ) : (
         <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
           <div
-            className={`grid min-w-[720px] transition-opacity ${loading ? "opacity-60" : ""}`}
+            className={`grid min-w-[600px] transition-opacity sm:min-w-[720px] ${loading ? "opacity-60" : ""}`}
             style={{ gridTemplateColumns: `4.5rem repeat(${spaces.length}, minmax(0, 1fr))` }}
           >
             {/* Header row */}
             <div className="sticky left-0 z-20 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" />
-            {spaces.map((s) => {
+            {columns.map((s) => {
               const canBook = s.bookable_by.includes(profile.role);
               return (
                 <div
@@ -330,7 +338,7 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
             </div>
 
             {/* One column per space */}
-            {spaces.map((space) => (
+            {columns.map((space) => (
               <div
                 key={space.id}
                 className="relative border-l border-zinc-200 dark:border-zinc-800"

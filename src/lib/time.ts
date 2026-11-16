@@ -107,6 +107,16 @@ export function formatDay(day: string): string {
   }).format(new Date(`${day}T12:00:00Z`));
 }
 
+/** "Wed, Nov 18" */
+export function formatShortDay(day: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${day}T12:00:00Z`));
+}
+
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;

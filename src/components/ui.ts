@@ -1,4 +1,6 @@
-// Shared Tailwind class strings (kept in TS rather than CSS @apply so they are
+// Shared Tailwind class strings. Form fields use 16px text on phones so iOS
+// Safari doesn't zoom in on focus.
+// (kept in TS rather than CSS @apply so they are
 // always picked up by Tailwind's class scanner).
 
 export const btn =
@@ -13,4 +15,4 @@ export const btnDanger =
 export const label = "mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300";
 
 export const field =
-  "block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-zinc-700";
+  "block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 sm:text-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:ring-zinc-700";
