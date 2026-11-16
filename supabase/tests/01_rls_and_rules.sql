@@ -152,6 +152,7 @@ select tests.fails($$select public.cancel_series(gen_random_uuid())$$,
 
 select tests.ok((select count(*) = 0 from public.bookings), 'student B sees none of A''s rows in bookings');
 select tests.ok((select count(*) = 1 from public.profiles), 'student sees only their own profile');
+select tests.ok((select count(*) = 6 from public.spaces), 'student with a profile reads all six spaces');
 select tests.ok((select title = 'Booked' and not is_mine from public.calendar_public where space_id = 3),
                 'calendar shows A''s booking as "Booked", not mine');
 select tests.ok(not exists (select 1 from information_schema.columns
@@ -164,6 +165,7 @@ select tests.fails($$select public.cancel_booking((select id from public.calenda
 -- No profile = nothing (e.g. a non-uchicago Clerk account).
 select tests.login('t_ghost', 'ghost@uchicago.edu');
 select tests.ok((select count(*) = 0 from public.calendar_public), 'user without profile sees an empty calendar');
+select tests.ok((select count(*) = 0 from public.spaces), 'user without profile cannot read spaces');
 select tests.fails($$select public.create_booking(4::smallint, tests.at(13), tests.at(14))$$,
                    'no profile', 'user without profile cannot book');
 
