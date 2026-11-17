@@ -149,15 +149,16 @@ PLAN.md               full plan, decisions, schedule, v2 roadmap
   days, and lists any conflicts.
 - **Additions:** "My bookings" (upcoming, past and cancelled), cancel "this and later dates" for series;
   closed, finals-week and reading days from the academic calendar; students and instructors see only
-  the spaces they can book.
+  the spaces they can book; room photos (tap a space's name).
 
 ## Known limitations
 
 - Clerk is on development keys (fine for this course; production keys need a custom domain).
-- Clerk's bot protection can block sign-ups from VPNs or public Wi-Fi. Workaround: staff create the
-  account in Clerk → Users. Under review before wider rollout.
+  Test mode is off, so every sign-in needs a code sent to a real inbox.
+- Clerk's bot protection can block sign-ups from VPNs or public Wi-Fi. It stays on; the workaround
+  is for staff to create the account in Clerk → Users.
 - Supabase free projects pause after a week without activity.
-- Room photos are planned (v1 if time, otherwise v2).
+- Pods 206, 207 and 215 show the Pod 216 photo (captioned) until each has its own.
 
 ## v2 (Dec 1)
 
