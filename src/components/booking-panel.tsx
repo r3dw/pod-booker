@@ -96,13 +96,15 @@ function NewBooking({ selection, profile, slots, supabase, onClose, onChanged }:
   const startOptions = isStaff ? [selection.startMin, selection.startMin + 15] : [selection.startMin];
   const [startMin, setStartMin] = useState(selection.startMin);
 
-  // Longest possible: to the next booking in this space, closing time, or 2 h for students.
+  // Longest possible: to the next booking in this space, closing time, or the role's
+  // limit (students 2 h, instructors 3 h; the database enforces the same).
   const nextStart = slots
     .filter((b) => b.space_id === space.id && dayOf(new Date(b.starts_at)) === day)
     .map((b) => minutesOf(new Date(b.starts_at)))
     .filter((m) => m > startMin)
     .reduce((a, b) => Math.min(a, b), CLOSE);
-  const cap = profile.role === "student" ? Math.min(nextStart, startMin + 120) : nextStart;
+  const roleMax = profile.role === "student" ? 120 : profile.role === "instructor" ? 180 : Infinity;
+  const cap = Math.min(nextStart, startMin + roleMax);
   const durations: number[] = [];
   for (let m = step; startMin + m <= cap; m += step) durations.push(m);
 

@@ -253,6 +253,17 @@ begin
   end if;
 end $$;
 
+-- Instructor limits: 3 h per booking, 3 upcoming (t_inst already has Room A on tests.day()).
+select tests.login('t_inst');
+select tests.fails($$select public.create_booking(4::smallint, tests.at(9, 0, tests.nth_day(2)), tests.at(12, 30, tests.nth_day(2)))$$,
+                   'Instructors can book up to 3 hours', 'instructor max 3 h');
+select tests.ok(public.create_booking(4::smallint, tests.at(9, 0, tests.nth_day(2)), tests.at(12, 0, tests.nth_day(2))) is not null,
+                'instructor books exactly 3 h (2nd upcoming)');
+select tests.ok(public.create_booking(4::smallint, tests.at(13, 0, tests.nth_day(2)), tests.at(14, 0, tests.nth_day(2))) is not null,
+                'instructor books a 3rd upcoming');
+select tests.fails($$select public.create_booking(4::smallint, tests.at(14, 0, tests.nth_day(2)), tests.at(15, 0, tests.nth_day(2)))$$,
+                   'already have 3 upcoming', 'instructor limited to 3 upcoming bookings');
+
 ------------------------------------------------------------------------------
 -- Quarter hours, closed days, staff-only days, imports
 ------------------------------------------------------------------------------

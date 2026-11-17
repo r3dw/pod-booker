@@ -491,7 +491,7 @@ export default function DayView({ profile, spaces, initialDay }: { profile: Prof
           ? "Staff can book any space in quarter hours, for themselves or others."
           : profile.role === "student"
             ? "Students can book up to 2 hours, one upcoming booking at a time, up to 7 days ahead."
-            : "Instructors can book up to 7 days ahead."}{" "}
+            : "Instructors can book up to 3 hours, three upcoming bookings at a time, up to 7 days ahead."}{" "}
         Open Monday–Friday, 8:30 AM–5:00 PM.
       </p>
 

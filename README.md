@@ -34,7 +34,7 @@ Pod Booker puts one live calendar in front of everyone.
 **Booking rules** (enforced in the database): Monday–Friday, 8:30 AM–5:00 PM, America/Chicago;
 nothing in the past. Students and instructors book in half-hour steps, up to 7 days ahead; staff
 and imported classes can use quarter hours. Students: at most 2 hours per booking and one upcoming
-booking at a time. The spaces are closed on University holidays, Thanksgiving week and between
+booking at a time. Instructors: at most 3 hours per booking and three upcoming bookings. The spaces are closed on University holidays, Thanksgiving week and between
 quarters; during finals week only staff and classes can book; reading days show a banner.
 
 ## Architecture
@@ -99,7 +99,7 @@ constraint keeps working and a series can be cancelled by id.
 
 ## Tests
 
-`supabase/tests/01_rls_and_rules.sql`: about 75 SQL assertions run as anonymous, each role, and a
+`supabase/tests/01_rls_and_rules.sql`: about 80 SQL assertions run as anonymous, each role, and a
 user with no profile: the uchicago.edu check, RLS on every table, the privacy of `calendar_public`,
 every booking rule, the overlap constraint, series conflicts, closed and finals-week days,
 quarter-hour rules, the Registrar import, role changes, and that broadcast
@@ -137,7 +137,8 @@ src/proxy.ts          Clerk middleware (Next 16 calls middleware "proxy")
 supabase/migrations/  schema, RLS, functions, data changes (applied in order)
 supabase/tests/       SQL test suite
 scripts/db.sh         apply migrations / run tests / one-off SQL without printing the DB URL
-PLAN.md               full plan, decisions, schedule, v2 roadmap
+PLAN.md               v2 plan (Dec 1)
+PLAN-v1.md            v1 plan: decisions, schema, RLS design, schedule
 ```
 
 ## Changes from the proposal
@@ -163,4 +164,4 @@ PLAN.md               full plan, decisions, schedule, v2 roadmap
 ## v2 (Dec 1)
 
 Move/cancel with a reason and notification; instructor priority; staff-only warnings log; blocking; visual update;
-usage tracking if time allows. See `PLAN.md`.
+usage tracking if time allows. See `PLAN.md`; the v1 plan is in `PLAN-v1.md`.
